@@ -1,4 +1,12 @@
-# linux-ops
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/branding/linux-ops-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/branding/linux-ops-light.png">
+  <img src="docs/branding/linux-ops-light.png" alt="linux-ops: graphite terminal with a mint command prompt and a penguin" width="320">
+</picture>
+
+</div>
 
 An agent skill for administering the Linux machine the agent runs on. It gives the agent a profile of the host, a method for changing it safely, and a rule for staying out of the way on systems it does not support.
 
