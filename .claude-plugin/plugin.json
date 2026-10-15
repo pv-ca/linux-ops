@@ -2,5 +2,6 @@
   "name": "linux-ops",
   "description": "Linux system administration from host evidence: profiles the machine, changes it in reversible transactions, and stays read-only on systems it does not support.",
   "version": "0.1.0",
+  "license": "MIT",
   "keywords": ["linux", "sysadmin", "systemd", "fedora", "debian", "ubuntu", "arch", "opensuse"]
 }

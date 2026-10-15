@@ -2,7 +2,7 @@
 
 An agent skill for administering the Linux machine the agent runs on. It gives the agent a profile of the host, a method for changing it safely, and a rule for staying out of the way on systems it does not support.
 
-> Early draft, version 0.1.0. No license has been chosen, so all rights are reserved for now.
+> Early draft, version 0.1.0.
 
 Models already know `apt` and `systemctl`. What they lack is the state of this particular machine and the discipline to change it reversibly, so that is what the skill supplies.
 
@@ -38,3 +38,7 @@ $ tests/containers.sh            # the detector inside each tier 1 container ima
 ```
 
 `tests/containers.sh` needs Docker or Podman and network access; set `ENGINE` to choose between them.
+
+## License
+
+[MIT](LICENSE)
