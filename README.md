@@ -1,18 +1,45 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/branding/linux-ops-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/branding/linux-ops-light.png">
-  <img src="docs/branding/linux-ops-light.png" alt="linux-ops: graphite terminal with a mint command prompt and a penguin" width="320">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/branding/linux-ops-surreal-textured-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/branding/linux-ops-surreal-textured-light.png">
+  <img src="docs/branding/linux-ops-surreal-textured-light.png" alt="linux-ops: a penguin mechanic adjusts a terminal with articulated legs" width="340">
 </picture>
+
+### Your agent for Linux system administration.
+
+[![Claude Code](https://img.shields.io/badge/Claude_Code-skill-d97757?style=flat-square)](#install)
+[![Codex](https://img.shields.io/badge/Codex-skill-10a37f?style=flat-square)](#install)
+[![MIT](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](LICENSE)
+[![Status](https://img.shields.io/badge/status-draft-8a8a8a?style=flat-square)](#install)
+
+**English** · [Português (Brasil)](docs/readme/README_pt-BR.md)
+
+[Install](#install) · [What it does](#what-it-does) · [Supported systems](#supported-systems) · [Development](#development)
 
 </div>
 
-An agent skill for administering the Linux machine the agent runs on. It gives the agent a profile of the host, a method for changing it safely, and a rule for staying out of the way on systems it does not support.
+---
+
+**linux-ops** helps your agent administer the Linux machine it runs on. It supplies a host profile, a method for reversible changes and clear limits on unsupported systems.
 
 > Early draft, version 0.1.0.
 
 Models already know `apt` and `systemctl`. What they lack is the state of this particular machine and the discipline to change it reversibly, so that is what the skill supplies.
+
+## Install
+
+Copy `skills/linux-ops` into your agent's skills directory, for example `~/.claude/skills/linux-ops` for Claude Code or `~/.agents/skills/linux-ops` for Codex.
+
+## What it does
+
+- `skills/linux-ops/SKILL.md`: the method, covering evidence, change transactions and the confirmation boundary.
+- `skills/linux-ops/scripts/detect_host.py`: prints the host profile as JSON. It reads the host and changes nothing. Python 3.6+, standard library only.
+
+```console
+$ python3 skills/linux-ops/scripts/detect_host.py --compact
+{"change_model": "imperative", "environment": "physical", "family": "fedora", "init": "systemd", "mode": "read-write", "package_manager": "dnf", ...}
+```
 
 ## Supported systems
 
@@ -23,20 +50,6 @@ Models already know `apt` and `systemctl`. What they lack is the state of this p
 | Everything else | Read-only mode: the skill inspects and advises, and makes no changes |
 
 Image-based systems (Fedora Silverblue and Kinoite, openSUSE MicroOS and Aeon), NixOS and hosts without systemd are held in read-only mode. [docs/CONTRACT.md](docs/CONTRACT.md) states the rules.
-
-## What is in this version
-
-- `skills/linux-ops/SKILL.md`: the method, covering evidence, change transactions and the confirmation boundary.
-- `skills/linux-ops/scripts/detect_host.py`: prints the host profile as JSON. It reads the host and changes nothing. Python 3.6+, standard library only.
-
-```console
-$ python3 skills/linux-ops/scripts/detect_host.py --compact
-{"change_model": "imperative", "environment": "physical", "family": "fedora", "init": "systemd", "mode": "read-write", "package_manager": "dnf", ...}
-```
-
-## Install
-
-Copy `skills/linux-ops` into your agent's skills directory, for example `~/.claude/skills/linux-ops` for Claude Code or `~/.agents/skills/linux-ops` for Codex.
 
 ## Development
 
