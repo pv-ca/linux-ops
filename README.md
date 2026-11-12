@@ -6,7 +6,7 @@
   <img src="docs/branding/linux-ops-surreal-textured-light.png" alt="linux-ops: a penguin mechanic adjusts a terminal with articulated legs" width="340">
 </picture>
 
-### Your agent for Linux system administration.
+### Undo what your AI agent did to your Linux machine.
 
 [![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-d97757?style=flat-square)](#install)
 [![Codex](https://img.shields.io/badge/Codex-planned-8a8a8a?style=flat-square)](#install)
@@ -22,7 +22,14 @@
 
 ---
 
-**linux-ops** lets your agent administer the Linux machine it runs on: the agent records each change with the command that undoes it, a hook logs the commands it ran in case it forgets, and it can tell you what changed since things last worked.
+Your agent installs a package, enables a service and edits a file in `/etc`. The next day something is broken, and a new session has no idea what was done. Claude Code's `/rewind` brings back the files the agent edited, but not what its shell commands changed.
+
+**linux-ops** keeps each change the agent makes with the command that reverses it, and a hook logs every command it runs in case it forgets to record one. A new session can then answer two questions:
+
+- **What changed since it last worked?** `/linux-ops:changes` compares snapshots and the package manager's own record, so it also finds changes nobody announced.
+- **How do I put it back?** `/linux-ops:undo` shows each change with the command that reverses it, then runs it and checks what is still different.
+
+In Codex, Antigravity and other agents, ask for the same thing in words.
 
 > Early version, 0.3.1. **Claude Code: supported and tested. Codex and Antigravity: planned, not yet tested.** Measured on two scripted cases on Fedora; see [How well it works](#how-well-it-works).
 

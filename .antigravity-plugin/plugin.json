@@ -3,7 +3,7 @@
   "name": "linux-ops",
   "displayName": "Linux Ops",
   "version": "0.3.1",
-  "description": "Let an agent administer your Linux machine: every change it makes is journaled with its undo command, and it can tell you what changed since things last worked.",
+  "description": "Undo what your AI agent did to your Linux machine: each change is kept with the command that reverses it, and a new session can tell you what changed since things last worked.",
   "suggestedPrompts": [
     "What changed on this machine since last week?",
     "Undo the last change you made to this system",

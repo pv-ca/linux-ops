@@ -1,6 +1,6 @@
 {
   "name": "linux-ops",
-  "description": "Let an agent administer your Linux machine: every change it makes is journaled with its undo command, and it can tell you what changed since things last worked.",
+  "description": "Undo what your AI agent did to your Linux machine: each change is kept with the command that reverses it, and a new session can tell you what changed since things last worked.",
   "version": "0.3.1",
   "license": "MIT",
   "types": "./types/index.d.ts",

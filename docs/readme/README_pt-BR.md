@@ -6,7 +6,7 @@
   <img src="../../docs/branding/linux-ops-surreal-textured-light.png" alt="linux-ops: um pinguim mecânico ajusta um terminal de pernas articuladas" width="340">
 </picture>
 
-### Seu agente para administrar o Linux.
+### Desfaça o que seu agente de IA fez na sua máquina Linux.
 
 [![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-d97757?style=flat-square)](#instalação)
 [![Codex](https://img.shields.io/badge/Codex-planejado-8a8a8a?style=flat-square)](#instalação)
@@ -22,7 +22,14 @@
 
 ---
 
-**linux-ops** deixa seu agente administrar a máquina Linux em que ele roda: o agente registra cada alteração com o comando que a desfaz, um hook grava os comandos que ele rodou caso ele esqueça, e ele sabe dizer o que mudou desde que tudo funcionava.
+Seu agente instala um pacote, ativa um serviço e edita um arquivo em `/etc`. No dia seguinte algo quebrou, e uma sessão nova não faz ideia do que foi feito. O `/rewind` do Claude Code traz de volta os arquivos que o agente editou, mas não o que os comandos de shell dele mudaram.
+
+A **linux-ops** guarda cada alteração que o agente faz junto com o comando que a reverte, e um hook grava todo comando que ele roda, caso ele esqueça de registrar algum. Assim uma sessão nova consegue responder duas perguntas:
+
+- **O que mudou desde que funcionava?** O `/linux-ops:changes` compara retratos da máquina e o registro do próprio gerenciador de pacotes, então acha também mudanças que ninguém avisou.
+- **Como eu volto atrás?** O `/linux-ops:undo` mostra cada alteração com o comando que a reverte, depois roda esse comando e confere o que ainda está diferente.
+
+No Codex, no Antigravity e em outros agentes, peça a mesma coisa com palavras.
 
 > Versão inicial, 0.3.1. **Claude Code: suportado e testado. Codex e Antigravity: planejados, ainda não testados.** Medida em dois casos roteirizados no Fedora; veja [Quão bem funciona](#quão-bem-funciona).
 
