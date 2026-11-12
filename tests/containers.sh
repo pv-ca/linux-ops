@@ -15,9 +15,11 @@ cases=(
   "registry.fedoraproject.org/fedora:latest|fedora|dnf|dnf -y -q install python3"
   "docker.io/library/debian:stable|debian|apt|apt-get -qq update && apt-get -qq -y install python3"
   "docker.io/library/ubuntu:latest|debian|apt|apt-get -qq update && apt-get -qq -y install python3"
-  "docker.io/library/archlinux:latest|arch|pacman|pacman -Sy --noconfirm --quiet python"
+  "docker.io/library/archlinux:latest|arch|pacman|pacman -Syu --noconfirm --quiet python"
   "registry.opensuse.org/opensuse/tumbleweed:latest|suse|zypper|zypper -q -n install python3"
   "registry.opensuse.org/opensuse/leap:15.6|suse|zypper|zypper -q -n install python3"
+  # No family: the scripts must still profile and snapshot it.
+  "docker.io/library/alpine:latest||apk|apk add -q python3"
 )
 
 failed=0
@@ -28,8 +30,15 @@ for entry in "${cases[@]}"; do
   fi
   echo "== $image"
   if ! profile="$("$engine" run --rm -v "$repo:/src:ro,z" "$image" sh -c \
-    "command -v python3 >/dev/null 2>&1 || { $install; } >/dev/null 2>&1; python3 /src/skills/linux-ops/scripts/detect_host.py --compact")"; then
-    echo "FAIL: could not run the detector"
+    "command -v python3 >/dev/null 2>&1 || { $install; } >/dev/null 2>&1
+     cd /src/skills/linux-ops/scripts
+     # A snapshot with no packages or no /etc means the package query is wrong here.
+     LINUX_OPS_STATE=/tmp/s python3 state.py snapshot >/dev/null &&
+     python3 -c 'import glob, json, sys
+s = json.load(open(glob.glob(\"/tmp/s/snapshots/*.json\")[0]))
+sys.exit(0 if len(s[\"packages\"]) > 20 and s[\"etc\"] else \"FAIL: empty snapshot\")' &&
+     python3 detect_host.py --compact")"; then
+    echo "FAIL: could not run the scripts"
     failed=1
     continue
   fi
@@ -37,10 +46,11 @@ for entry in "${cases[@]}"; do
   if ! EXPECT_FAMILY="$family" EXPECT_MANAGER="$manager" python3 -c '
 import json, os, sys
 profile = json.loads(sys.stdin.read())
+family = os.environ["EXPECT_FAMILY"] or None
 expected = {
-    "family": os.environ["EXPECT_FAMILY"],
+    "family": family,
     "package_manager": os.environ["EXPECT_MANAGER"],
-    "support": "tier1",
+    "support": "tier1" if family else "untested",
     "change_model": "imperative",
     "environment": "container",
 }

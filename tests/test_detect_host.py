@@ -76,8 +76,7 @@ def test_tier1_hosts_are_read_write(tmp_path, release, binary, family, manager):
     assert result["support"] == "tier1"
     assert result["package_manager"] == manager
     assert result["change_model"] == "imperative"
-    assert result["mode"] == "read-write"
-    assert result["read_only_reasons"] == []
+    assert result["notes"] == []
 
 
 @pytest.mark.parametrize(
@@ -92,26 +91,26 @@ def test_derivatives_resolve_through_id_like(tmp_path, release, binary, family):
     result = profile(make_host(tmp_path, release), binaries=[binary])
     assert result["family"] == family
     assert result["support"] == "derivative"
-    assert result["mode"] == "read-write"
+    assert result["notes"] == []
 
 
 @pytest.mark.parametrize("release", ["alpine", "nixos"])
-def test_unknown_family_is_read_only(tmp_path, release):
+def test_unknown_family_is_profiled_not_refused(tmp_path, release):
     files = {"etc/NIXOS": ""} if release == "nixos" else {}
     result = profile(make_host(tmp_path, release, files=files), binaries=["apk"])
     assert result["family"] is None
-    assert result["support"] == "unsupported"
-    assert result["package_manager"] is None
-    assert result["mode"] == "read-only"
-    assert any("outside the supported families" in r for r in result["read_only_reasons"])
+    assert result["support"] == "untested"
+    assert result["package_manager"] == "apk"
+    assert any("not one this skill is tested on" in note for note in result["notes"])
+    assert any("NixOS" in note for note in result["notes"]) == (release == "nixos")
 
 
-def test_ostree_host_is_image_based_and_read_only(tmp_path):
+def test_ostree_host_is_image_based(tmp_path):
     root = make_host(tmp_path, "silverblue", files={"run/ostree-booted": ""})
     result = profile(root, binaries=["dnf", "rpm-ostree"])
     assert result["family"] == "fedora"
     assert result["change_model"] == "image"
-    assert result["mode"] == "read-only"
+    assert any("rpm-ostree" in note for note in result["notes"])
 
 
 def test_transactional_host_is_image_based(tmp_path):
@@ -121,7 +120,7 @@ def test_transactional_host_is_image_based(tmp_path):
     assert result["family"] == "suse"
     assert result["support"] == "derivative"
     assert result["change_model"] == "image"
-    assert result["mode"] == "read-only"
+    assert len(result["notes"]) == 1
 
 
 def test_transactional_update_on_writable_root_stays_imperative(tmp_path):
@@ -129,28 +128,31 @@ def test_transactional_update_on_writable_root_stays_imperative(tmp_path):
     root = make_host(tmp_path, "tumbleweed", files={"proc/mounts": mounts})
     result = profile(root, binaries=["zypper", "transactional-update"])
     assert result["change_model"] == "imperative"
-    assert result["mode"] == "read-write"
+    assert result["notes"] == []
 
 
-def test_missing_systemd_is_read_only(tmp_path):
+def test_missing_systemd_is_noted(tmp_path):
     root = make_host(tmp_path, "debian", systemd=False, files={"proc/1/comm": "bash\n"})
     result = profile(root, binaries=["apt-get"])
     assert result["init"] == "bash"
-    assert result["mode"] == "read-only"
-    assert result["read_only_reasons"] == ["init is bash, not systemd"]
+    assert len(result["notes"]) == 1 and "init is bash" in result["notes"][0]
 
 
-def test_missing_package_manager_is_read_only(tmp_path):
+def test_missing_package_manager_is_noted(tmp_path):
     result = profile(make_host(tmp_path, "fedora"))
     assert result["package_manager"] is None
-    assert result["read_only_reasons"] == ["package manager dnf is not installed"]
+    assert len(result["notes"]) == 1 and "no known package manager" in result["notes"][0]
 
 
-def test_missing_os_release_is_read_only(tmp_path):
+def test_missing_os_release_is_noted(tmp_path):
     (tmp_path / "run/systemd/system").mkdir(parents=True)
     result = profile(str(tmp_path))
     assert result["os"]["id"] is None
-    assert result["mode"] == "read-only"
+    assert any("'unknown'" in note for note in result["notes"])
+
+
+def test_os_release_value_without_quotes_keeps_its_spaces():
+    assert detect_host.parse_os_release("NAME=Fedora Linux\n")["NAME"] == "Fedora Linux"
 
 
 def test_mac_detection(tmp_path):

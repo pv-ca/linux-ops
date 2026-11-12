@@ -1,0 +1,9 @@
+{
+  "name": "linux-ops",
+  "version": "0.3.0",
+  "description": "Let an agent administer your Linux machine: every change it makes is journaled with its undo command, and it can tell you what changed since things last worked.",
+  "license": "MIT",
+  "keywords": ["linux", "sysadmin", "systemd", "undo", "journal"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

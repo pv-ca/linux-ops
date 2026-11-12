@@ -1,0 +1,14 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "linux-ops",
+  "displayName": "Linux Ops",
+  "version": "0.3.0",
+  "description": "Let an agent administer your Linux machine: every change it makes is journaled with its undo command, and it can tell you what changed since things last worked.",
+  "suggestedPrompts": [
+    "What changed on this machine since last week?",
+    "Undo the last change you made to this system",
+    "Check whether this machine is ready for a system update"
+  ],
+  "license": "MIT",
+  "keywords": ["linux", "sysadmin", "systemd", "undo", "journal"]
+}

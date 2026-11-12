@@ -1,7 +1,19 @@
 {
   "name": "linux-ops",
-  "description": "Linux system administration from host evidence: profiles the machine, changes it in reversible transactions, and stays read-only on systems it does not support.",
-  "version": "0.1.0",
+  "description": "Let an agent administer your Linux machine: every change it makes is journaled with its undo command, and it can tell you what changed since things last worked.",
+  "version": "0.3.0",
   "license": "MIT",
-  "keywords": ["linux", "sysadmin", "systemd", "fedora", "debian", "ubuntu", "arch", "opensuse"]
+  "types": "./types/index.d.ts",
+  "keywords": [
+    "linux",
+    "sysadmin",
+    "systemd",
+    "undo",
+    "journal",
+    "fedora",
+    "debian",
+    "ubuntu",
+    "arch",
+    "opensuse"
+  ]
 }

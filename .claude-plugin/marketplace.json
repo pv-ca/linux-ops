@@ -1,0 +1,18 @@
+{
+  "name": "linux-ops",
+  "owner": {
+    "name": "Paulo Victor",
+    "url": "https://github.com/pv-ca"
+  },
+  "description": "linux-ops: let an agent administer your Linux machine, with a journal, undo and a record of what changed.",
+  "plugins": [
+    {
+      "name": "linux-ops",
+      "source": "./",
+      "description": "Let an agent administer your Linux machine: every change it makes is journaled with its undo command, and it can tell you what changed since things last worked.",
+      "homepage": "https://github.com/pv-ca/linux-ops",
+      "license": "MIT",
+      "keywords": ["linux", "sysadmin", "systemd", "undo", "journal"]
+    }
+  ]
+}

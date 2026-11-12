@@ -1,0 +1,34 @@
+{
+  "modules": ["./panel.tsx"],
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/skills/linux-ops/scripts/journal.py\" context",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/skills/linux-ops/scripts/state.py\" snapshot --if-older 24 >/dev/null",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/skills/linux-ops/scripts/journal.py\" hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

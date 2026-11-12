@@ -1,0 +1,30 @@
+{
+  "linux-ops-context": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "python3 ./skills/linux-ops/scripts/journal.py context --format antigravity",
+        "timeout": 15
+      },
+      {
+        "type": "command",
+        "command": "python3 ./skills/linux-ops/scripts/state.py snapshot --if-older 24 >/dev/null; echo '{}'",
+        "timeout": 30
+      }
+    ]
+  },
+  "linux-ops-journal": {
+    "PostToolUse": [
+      {
+        "matcher": "run_command|write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ./skills/linux-ops/scripts/journal.py hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

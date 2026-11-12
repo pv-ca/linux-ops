@@ -2,7 +2,8 @@
 """Profile a Linux host for the linux-ops skill.
 
 Reads the host and prints one JSON object describing the axes the skill
-branches on, plus the operating mode they allow. Changes nothing.
+branches on, plus notes on what makes the usual commands wrong there.
+Works on any distribution. Changes nothing.
 Runs on Python 3.6+ with the standard library only.
 """
 
@@ -14,7 +15,7 @@ import shutil
 import subprocess
 import sys
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # 2: `mode` and `read_only_reasons` gave way to `notes`
 
 # Distributions exercised in CI. Anything else that resolves to one of
 # these families through ID_LIKE is a derivative: same axes, no guarantee.
@@ -54,6 +55,17 @@ PACKAGE_MANAGER_BINARY = {
     "zypper": "zypper",
 }
 
+# Outside the four families the manager is whichever of these is installed.
+OTHER_MANAGERS = (
+    ("apk", "apk"),
+    ("xbps", "xbps-install"),
+    ("portage", "emerge"),
+    ("eopkg", "eopkg"),
+    ("swupd", "swupd"),
+    ("slackpkg", "slackpkg"),
+    ("nix", "nix-env"),
+)
+
 
 def _read(root, relative):
     """Return the stripped text of a file under root, or None."""
@@ -78,10 +90,11 @@ def parse_os_release(text):
             continue
         key, _, raw = line.partition("=")
         try:
-            parts = shlex.split(raw)
+            # Joined, so an unquoted value with a space is not cut at the space.
+            value = " ".join(shlex.split(raw))
         except ValueError:
-            parts = [raw.strip("\"'")]
-        fields[key.strip()] = parts[0] if parts else ""
+            value = raw.strip("\"'")
+        fields[key.strip()] = value
     return fields
 
 
@@ -98,7 +111,7 @@ def detect_os(root):
 
 
 def detect_family(os_info):
-    """Return (family, support) where support is tier1, derivative or unsupported."""
+    """Return (family, support) where support is tier1, derivative or untested."""
     os_id = os_info["id"]
     if os_id in TIER1_IDS:
         return TIER1_IDS[os_id], "tier1"
@@ -107,7 +120,7 @@ def detect_family(os_info):
         for candidate in tokens:
             if candidate == token or candidate.startswith(token + "-"):
                 return family, "derivative"
-    return None, "unsupported"
+    return None, "untested"
 
 
 def _root_is_read_only(root):
@@ -230,36 +243,42 @@ def build_profile(root="/", env=None, which=None, uid=None):
     os_info = detect_os(root)
     family, support = detect_family(os_info)
     manager = PACKAGE_MANAGER.get(family)
-    manager_present = bool(manager and which(PACKAGE_MANAGER_BINARY[manager]))
+    if not (manager and which(PACKAGE_MANAGER_BINARY[manager])):
+        manager = next((name for name, binary in OTHER_MANAGERS if which(binary)), None)
     change_model = detect_change_model(root, which)
     init = detect_init(root)
 
-    reasons = []
+    # What makes the usual commands wrong here. Nothing in it forbids a change.
+    notes = []
     if family is None:
-        reasons.append(
-            "distribution %r is outside the supported families" % (os_info["id"] or "unknown")
-        )
-    elif not manager_present:
-        reasons.append("package manager %s is not installed" % manager)
-    if change_model != "imperative":
-        reasons.append("change model is %s, which this version only inspects" % change_model)
+        notes.append("distribution %r is not one this skill is tested on: confirm package "
+                     "and unit names on the host" % (os_info["id"] or "unknown"))
+    if manager is None:
+        notes.append("no known package manager was found: ask how software is installed here")
+    if change_model == "image":
+        notes.append("image-based system: the root is read-only and a package installed the "
+                     "usual way does not persist; use the system's own tool (rpm-ostree, "
+                     "bootc, transactional-update), Flatpak or a container")
+    elif change_model == "declarative":
+        notes.append("NixOS: system state comes from its configuration; change that and "
+                     "rebuild, because edits made by hand are overwritten")
     if init != "systemd":
-        reasons.append("init is %s, not systemd" % (init or "undetermined"))
+        notes.append("init is %s, not systemd: systemctl and journalctl are absent, use "
+                     "this init's own service commands" % (init or "undetermined"))
 
     return {
         "schema_version": SCHEMA_VERSION,
         "os": os_info,
         "family": family,
         "support": support,
-        "package_manager": manager if manager_present else None,
+        "package_manager": manager,
         "change_model": change_model,
         "init": init,
         "mac": detect_mac(root),
         "session": detect_session(env),
         "environment": detect_environment(root, env, which, live),
         "privilege": detect_privilege(which, uid),
-        "mode": "read-only" if reasons else "read-write",
-        "read_only_reasons": reasons,
+        "notes": notes,
     }
 
 
