@@ -16,8 +16,9 @@ cases=(
   "docker.io/library/debian:stable|debian|apt|apt-get -qq update && apt-get -qq -y install python3"
   "docker.io/library/ubuntu:latest|debian|apt|apt-get -qq update && apt-get -qq -y install python3"
   "docker.io/library/archlinux:latest|arch|pacman|pacman -Syu --noconfirm --quiet python"
-  "registry.opensuse.org/opensuse/tumbleweed:latest|suse|zypper|zypper -q -n install python3"
-  "registry.opensuse.org/opensuse/leap:15.6|suse|zypper|zypper -q -n install python3"
+  # Docker Hub mirror of the official openSUSE images: registry.opensuse.org went down during CI once.
+  "docker.io/opensuse/tumbleweed:latest|suse|zypper|zypper -q -n install python3"
+  "docker.io/opensuse/leap:15.6|suse|zypper|zypper -q -n install python3"
   # No family: the scripts must still profile and snapshot it.
   "docker.io/library/alpine:latest||apk|apk add -q python3"
 )
