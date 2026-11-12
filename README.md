@@ -1,12 +1,10 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/branding/linux-ops-surreal-textured-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/branding/linux-ops-surreal-textured-light.png">
-  <img src="docs/branding/linux-ops-surreal-textured-light.png" alt="linux-ops: a penguin mechanic adjusts a terminal with articulated legs" width="340">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/branding/linux-ops-banner-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/branding/linux-ops-banner-light.png">
+  <img src="docs/branding/linux-ops-banner-light.png" alt="linux-ops. Undo what your AI agent did to your Linux machine. A pixel-art penguin in a hard hat fixes a walking computer terminal with a wrench." width="100%">
 </picture>
-
-### Undo what your AI agent did to your Linux machine.
 
 [![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-d97757?style=flat-square)](#install)
 [![Codex](https://img.shields.io/badge/Codex-planned-8a8a8a?style=flat-square)](#install)
@@ -173,9 +171,9 @@ linux-ops compares states and keeps undo commands. It does not restore the syste
 | Turn the log off | `LINUX_OPS_NO_LOG=1` stops the automatic command log and keeps only the changes the agent records. |
 | Remove everything | Uninstall the plugin with your agent's own command, then delete `~/.local/state/linux-ops/`. |
 
-To report a security problem, see [SECURITY.md](SECURITY.md).
-
 Credentials are masked before a command is written: values assigned to or passed with `password`, `token`, `secret`, `api key` or `authorization`, passwords and tokens inside URLs, private keys, and the password arguments of common tools (`curl -u`, `sshpass`, `mysql`, `nmcli`, `chpasswd`, `docker login`, `sudo -S` and a few more). dconf keys whose names look like credentials are stored as a hash. The mask is a courtesy, not a guarantee: a secret in a form it does not know is stored as typed.
+
+To report a security problem, see [SECURITY.md](SECURITY.md).
 
 ## Supported systems
 

@@ -1,12 +1,10 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../../docs/branding/linux-ops-surreal-textured-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="../../docs/branding/linux-ops-surreal-textured-light.png">
-  <img src="../../docs/branding/linux-ops-surreal-textured-light.png" alt="linux-ops: um pinguim mecânico ajusta um terminal de pernas articuladas" width="340">
+  <source media="(prefers-color-scheme: dark)" srcset="../../docs/branding/linux-ops-banner-pt-BR-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="../../docs/branding/linux-ops-banner-pt-BR-light.png">
+  <img src="../../docs/branding/linux-ops-banner-pt-BR-light.png" alt="linux-ops. Desfaça o que seu agente de IA fez na sua máquina Linux. Um pinguim em pixel art, de capacete, conserta com uma chave inglesa um terminal de computador que anda." width="100%">
 </picture>
-
-### Desfaça o que seu agente de IA fez na sua máquina Linux.
 
 [![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-d97757?style=flat-square)](#instalação)
 [![Codex](https://img.shields.io/badge/Codex-planejado-8a8a8a?style=flat-square)](#instalação)
@@ -173,9 +171,9 @@ A linux-ops compara estados e guarda comandos de reversão. Ela não restaura o 
 | Desligar o registro | `LINUX_OPS_NO_LOG=1` desliga o registro automático de comandos e mantém só as alterações que o agente declara. |
 | Remover tudo | Desinstale o plugin com o comando do seu agente e apague `~/.local/state/linux-ops/`. |
 
-Para relatar um problema de segurança, veja o [SECURITY.md](../../SECURITY.md) (em inglês).
-
 Credenciais são mascaradas antes de o comando ser gravado: valores atribuídos ou passados a `password`, `token`, `secret`, `api key` ou `authorization`, senhas e tokens dentro de URLs, chaves privadas, e os argumentos de senha de ferramentas comuns (`curl -u`, `sshpass`, `mysql`, `nmcli`, `chpasswd`, `docker login`, `sudo -S` e mais algumas). Chaves do dconf cujo nome parece de credencial são guardadas como hash. A máscara é uma cortesia, não uma garantia: um segredo em um formato que ela não conhece fica guardado como foi digitado.
+
+Para relatar um problema de segurança, veja o [SECURITY.md](../../SECURITY.md) (em inglês).
 
 ## Sistemas suportados
 
