@@ -77,8 +77,8 @@ Turns and cost are medians per round. Three rounds show a pattern, not a rate.
 | Agent | What you get | Status |
 | --- | --- | --- |
 | Claude Code | skill, hooks, commands and panel | supported, measured |
-| Codex | skill and hooks | preview: installs, no measured session yet |
-| Antigravity | skill and hooks | preview: installs, no measured session yet |
+| Codex | skill and hooks | planned: installs, not tested yet |
+| Antigravity | skill and hooks | planned: installs, not tested yet |
 | Any other agent | skill only, no hooks: the agent writes the journal itself | not measured |
 
 **Claude Code**
@@ -172,6 +172,8 @@ linux-ops compares states and keeps undo commands. It does not restore the syste
 | Who sees it | The scripts send nothing anywhere. What your agent reads from the journal goes to your model provider, like any other tool output. |
 | Turn the log off | `LINUX_OPS_NO_LOG=1` stops the automatic command log and keeps only the changes the agent records. |
 | Remove everything | Uninstall the plugin with your agent's own command, then delete `~/.local/state/linux-ops/`. |
+
+To report a security problem, see [SECURITY.md](SECURITY.md).
 
 Credentials are masked before a command is written: values assigned to or passed with `password`, `token`, `secret`, `api key` or `authorization`, passwords and tokens inside URLs, private keys, and the password arguments of common tools (`curl -u`, `sshpass`, `mysql`, `nmcli`, `chpasswd`, `docker login`, `sudo -S` and a few more). dconf keys whose names look like credentials are stored as a hash. The mask is a courtesy, not a guarantee: a secret in a form it does not know is stored as typed.
 

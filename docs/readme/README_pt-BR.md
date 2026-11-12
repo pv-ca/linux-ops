@@ -77,8 +77,8 @@ Turnos e custo são medianas por rodada. Três rodadas mostram um padrão, não 
 | Agente | O que você recebe | Situação |
 | --- | --- | --- |
 | Claude Code | skill, hooks, comandos e painel | suportado, medido |
-| Codex | skill e hooks | prévia: instala, nenhuma sessão medida ainda |
-| Antigravity | skill e hooks | prévia: instala, nenhuma sessão medida ainda |
+| Codex | skill e hooks | planejado: instala, ainda não testado |
+| Antigravity | skill e hooks | planejado: instala, ainda não testado |
 | Qualquer outro agente | só a skill, sem hooks: o próprio agente grava o diário | não medido |
 
 **Claude Code**
@@ -172,6 +172,8 @@ A linux-ops compara estados e guarda comandos de reversão. Ela não restaura o 
 | Quem vê | Os scripts não enviam nada para lugar nenhum. O que o agente lê do diário vai para o provedor do seu modelo, como qualquer outra saída de ferramenta. |
 | Desligar o registro | `LINUX_OPS_NO_LOG=1` desliga o registro automático de comandos e mantém só as alterações que o agente declara. |
 | Remover tudo | Desinstale o plugin com o comando do seu agente e apague `~/.local/state/linux-ops/`. |
+
+Para relatar um problema de segurança, veja o [SECURITY.md](../../SECURITY.md) (em inglês).
 
 Credenciais são mascaradas antes de o comando ser gravado: valores atribuídos ou passados a `password`, `token`, `secret`, `api key` ou `authorization`, senhas e tokens dentro de URLs, chaves privadas, e os argumentos de senha de ferramentas comuns (`curl -u`, `sshpass`, `mysql`, `nmcli`, `chpasswd`, `docker login`, `sudo -S` e mais algumas). Chaves do dconf cujo nome parece de credencial são guardadas como hash. A máscara é uma cortesia, não uma garantia: um segredo em um formato que ela não conhece fica guardado como foi digitado.
 

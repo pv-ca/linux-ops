@@ -1,0 +1,22 @@
+name: Distribution support
+description: Your distribution, package manager or desktop is not handled well.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What does not work
+      description: What linux-ops missed or got wrong on this system (packages, services, snapshots, undo).
+    validations:
+      required: true
+  - type: textarea
+    id: host
+    attributes:
+      label: Host profile
+      description: |
+        The output of:
+        `python3 ~/.claude/plugins/cache/linux-ops/linux-ops/*/skills/linux-ops/scripts/detect_host.py --compact`
+        If the plugin is not installed, paste `cat /etc/os-release` instead.
+      render: json
+    validations:
+      required: true

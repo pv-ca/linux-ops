@@ -1,0 +1,41 @@
+name: Bug
+description: Something linux-ops did, or failed to do, on your machine.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you asked the agent, what it did, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to see it again
+      description: The commands or prompts, in order. Remove passwords, tokens and anything private.
+  - type: input
+    id: version
+    attributes:
+      label: linux-ops version
+      description: "`claude plugin list` shows it."
+      placeholder: "0.3.2"
+    validations:
+      required: true
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Agent
+      options: [Claude Code, Codex, Antigravity, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: host
+    attributes:
+      label: Host profile
+      description: |
+        The output of this command. It holds the distribution, package manager, init, session and security module, nothing personal.
+        `python3 ~/.claude/plugins/cache/linux-ops/linux-ops/*/skills/linux-ops/scripts/detect_host.py --compact`
+      render: json
+    validations:
+      required: true
