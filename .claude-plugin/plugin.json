@@ -1,7 +1,7 @@
 {
   "name": "linux-ops",
   "description": "Let an agent administer your Linux machine: every change it makes is journaled with its undo command, and it can tell you what changed since things last worked.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "MIT",
   "types": "./types/index.d.ts",
   "keywords": [

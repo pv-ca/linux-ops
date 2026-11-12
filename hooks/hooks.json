@@ -20,7 +20,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|Write|Edit",
+        "matcher": "Bash|Write|Edit|apply_patch",
         "hooks": [
           {
             "type": "command",

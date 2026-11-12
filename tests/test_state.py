@@ -213,6 +213,9 @@ def test_cli_snapshot_list_diff_history(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("LINUX_OPS_STATE", str(tmp_path / "state"))
     # The real ~/.config changes while the test runs; an empty home does not.
     monkeypatch.setenv("HOME", str(tmp_path))
+    # Two live snapshots a second apart differ when anything writes /etc meanwhile.
+    frozen = state.take_snapshot()
+    monkeypatch.setattr(state, "take_snapshot", lambda *a, **k: json.loads(json.dumps(frozen)))
     assert state.main(["diff"]) == 1
     assert state.main(["snapshot"]) == 0
     assert state.main(["snapshot", "--if-older", "24"]) == 0
@@ -241,3 +244,14 @@ def test_save_is_private_whole_and_pruned(tmp_path, monkeypatch):
         sorted(os.listdir(state.snapshot_dir(directory))) == state.saved(directory)
     for folder in (directory, state.snapshot_dir(directory)):
         assert os.stat(folder).st_mode & 0o077 == 0
+
+
+def test_dconf_keeps_a_hash_of_credential_values():
+    text = ("[system/proxy/http]\nauthentication-password='hunter2'\nhost='proxy.lan'\n")
+    values = state.parse_dconf(text)
+    assert values["/system/proxy/http/host"] == "'proxy.lan'"
+    hidden = values["/system/proxy/http/authentication-password"]
+    assert "hunter2" not in hidden and hidden.startswith("sha256:")
+    # A new password still shows as a change.
+    assert state.parse_dconf(text.replace("hunter2", "other"))[
+        "/system/proxy/http/authentication-password"] != hidden

@@ -22,6 +22,20 @@ import time
 SCHEMA_VERSION = 1
 
 
+def _container(root):
+    """The container's name when running in one, else an empty string."""
+    try:
+        with open(os.path.join(root, "run/.containerenv"), errors="replace") as handle:
+            found = re.search(r'^name="(.*)"$', handle.read(), re.MULTILINE)
+        return found.group(1) if found else "container"
+    except OSError:
+        pass
+    # Docker writes no name; distrobox on Docker sets the hostname to the container's.
+    if os.path.exists(os.path.join(root, ".dockerenv")):
+        return os.uname().nodename
+    return ""
+
+
 def state_dir(env=None, root="/"):
     """Directory holding this machine's journal and snapshots."""
     env = os.environ if env is None else env
@@ -33,6 +47,15 @@ def state_dir(env=None, root="/"):
             machine = handle.read().strip() or "unknown"
     except OSError:
         machine = "unknown"
+    # distrobox and toolbox share the host's machine-id and home, yet their packages are
+    # their own: an undo recorded in one must never run in the other.
+    suffix = _container(root)
+    # Escaped, not replaced: "dev-box" and "dev_box" are two containers, and no hyphen may
+    # remain inside the suffix, which is how the lookup below finds it.
+    suffix = "-" + re.sub(r"[^A-Za-z0-9_.]", lambda m: "%%%02X" % ord(m.group()), suffix) \
+        if suffix else ""
+    machine += suffix
+    unknown = "unknown" + suffix
     # One directory per machine, so a journal carried to another host stays apart.
     home = os.path.join(base, "linux-ops")
     target = os.path.join(home, machine)
@@ -40,10 +63,12 @@ def state_dir(env=None, root="/"):
     # not split the journal in two: "unknown" and the one real id are the same machine.
     try:
         if not os.path.isdir(target):
-            others = sorted(os.listdir(home))
-            if machine != "unknown" and "unknown" in others:
-                os.rename(os.path.join(home, "unknown"), target)
-            elif machine == "unknown" and len(others) == 1:
+            # Machine ids and "unknown" have no hyphen: what follows the first is the container.
+            others = sorted(name for name in os.listdir(home)
+                            if name.partition("-")[2] == suffix[1:])
+            if machine != unknown and unknown in others:
+                os.rename(os.path.join(home, unknown), target)
+            elif machine == unknown and len(others) == 1:
                 target = os.path.join(home, others[0])
     except OSError:
         pass
@@ -68,20 +93,47 @@ def read_entries(directory):
     return entries
 
 
+def give_back(*paths):
+    """Under sudo with the person's HOME kept, hand what root created back to them.
+
+    Left owned by root, the journal refuses the person's own hook from then on, silently.
+    """
+    uid = os.environ.get("SUDO_UID")
+    if os.geteuid() != 0 or not uid:
+        return
+    try:
+        uid = int(uid)
+        home = os.path.realpath(os.path.expanduser("~"))
+        if os.stat(home).st_uid != uid:
+            return  # sudo reset HOME to root's: these files are root's own
+        for path in paths:
+            # Only inside that home: LINUX_OPS_STATE may point anywhere, even at /.
+            if os.path.realpath(path).startswith(home + os.sep):
+                os.chown(path, uid, int(os.environ.get("SUDO_GID", uid)), follow_symlinks=False)
+    except (OSError, ValueError):
+        pass
+
+
 def append(directory, entry):
     """Append one entry and return it with its id and timestamp."""
     os.makedirs(directory, mode=0o700, exist_ok=True)
-    fd = os.open(_path(directory), os.O_RDWR | os.O_APPEND | os.O_CREAT, 0o600)
+    # NOFOLLOW: a link planted where the journal goes must not redirect a root write.
+    fd = os.open(_path(directory), os.O_RDWR | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    give_back(os.path.dirname(directory), directory, _path(directory))
     with os.fdopen(fd, "rb+") as handle:
         # Agents run tool calls in parallel: without the lock two entries share an id.
         fcntl.flock(handle, fcntl.LOCK_EX)
         # The id is the line number. Counting bytes keeps the hook fast on a long journal.
         # shortcut: the journal is never rotated; add rotation if its size becomes a complaint.
         handle.seek(0)
-        lines = sum(chunk.count(b"\n") for chunk in iter(lambda: handle.read(1 << 20), b""))
-        entry = dict(entry, id=lines + 1, ts=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        lines, last = 0, b"\n"
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            lines, last = lines + chunk.count(b"\n"), chunk[-1:]
+        # A write cut off before its newline would glue this entry to it, losing both.
+        start = b"" if last == b"\n" else b"\n"
+        entry = dict(entry, id=lines + len(start) + 1, ts=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                      schema_version=SCHEMA_VERSION)
-        handle.write((json.dumps(entry, sort_keys=True) + "\n").encode("utf-8"))
+        handle.write(start + (json.dumps(entry, sort_keys=True) + "\n").encode("utf-8"))
     return entry
 
 
@@ -139,6 +191,7 @@ def events_from_hook(payload):
     args = payload.get("tool_input") or call.get("args") or {}
     cwd = payload.get("cwd") or args.get("Cwd") or (payload.get("workspacePaths") or [""])[0]
     base = {"session": payload.get("session_id") or payload.get("conversationId"), "cwd": cwd}
+    # Codex sends apply_patch's patch text as tool_input.command, like a shell command.
     command = args.get("command") or args.get("CommandLine") or ""
     if tool in SHELL_TOOLS:
         if isinstance(command, list):  # some runtimes send argv instead of a line
@@ -219,6 +272,10 @@ def context(directory, profile):
     # The session knows the script names from here on, so it must know where they are.
     lines.append("linux-ops scripts (journal.py, state.py, detect_host.py): %s"
                  % os.path.dirname(os.path.abspath(__file__)))
+    if os.path.exists(_path(directory)) and not os.access(_path(directory), os.W_OK):
+        lines.append("Warning: %s is not writable by this user, so nothing is being logged; "
+                     "an earlier run as root probably created it. Tell the person, and offer "
+                     "to give the directory back to them with chown." % _path(directory))
     entries = read_entries(directory)
     recorded = changes(entries)
     if recorded:

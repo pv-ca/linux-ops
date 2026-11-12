@@ -54,6 +54,7 @@ SCALARS = ("kernel", "cmdline", "secure_boot")
 HOME_DEPTH = 3
 HOME_MAX_BYTES = 256 * 1024
 KEEP = 90  # snapshots kept; the session hook takes one a day at most
+CREDENTIAL_KEY = re.compile(journal._NAME, re.IGNORECASE)
 
 
 def _run(command):
@@ -132,6 +133,10 @@ def parse_dconf(text):
             section = line[1:-1]
         elif "=" in line:
             key, _, value = line.partition("=")
+            # A proxy or account password lives here in plain text: keep only a hash,
+            # which still shows that it changed.
+            if CREDENTIAL_KEY.search(key):
+                value = "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()
             values["/%s/%s" % (section, key)] = value
     return values
 
@@ -395,10 +400,13 @@ def save(directory, snapshot):
     name = time.strftime("%Y%m%dT%H%M%S") + ".json"
     final = os.path.join(snapshot_dir(directory), name)
     # Write aside and rename: a diff running at the same moment must not read half a file.
-    fd = os.open(final + ".tmp", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    # The pid keeps two sessions that finish in the same second out of each other's file.
+    temporary = "%s.%d.tmp" % (final, os.getpid())
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         json.dump(snapshot, handle, sort_keys=True)
-    os.replace(final + ".tmp", final)
+    os.replace(temporary, final)
+    journal.give_back(os.path.dirname(directory), directory, snapshot_dir(directory), final)
     # shortcut: keeps the newest KEEP snapshots and drops the rest; thin by age
     # instead if someone needs to look further back than about three months.
     for old in saved(directory)[:-KEEP]:

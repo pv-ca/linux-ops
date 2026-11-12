@@ -2,7 +2,7 @@
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "linux-ops",
   "displayName": "Linux Ops",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Let an agent administer your Linux machine: every change it makes is journaled with its undo command, and it can tell you what changed since things last worked.",
   "suggestedPrompts": [
     "What changed on this machine since last week?",

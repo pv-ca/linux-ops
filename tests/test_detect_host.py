@@ -131,6 +131,17 @@ def test_transactional_update_on_writable_root_stays_imperative(tmp_path):
     assert result["notes"] == []
 
 
+def test_container_without_a_service_manager_has_no_init(tmp_path):
+    root = make_host(tmp_path, "fedora", systemd=False,
+                     files={"proc/1/comm": "sleep\n", "run/.containerenv": ""})
+    result = profile(root, binaries=["dnf"])
+    assert result["init"] == "none"
+    assert len(result["notes"]) == 1 and "no service manager" in result["notes"][0]
+    # A real init inside a container is still named.
+    (tmp_path / "proc/1/comm").write_text("runit\n")
+    assert profile(root, binaries=["dnf"])["init"] == "runit"
+
+
 def test_missing_systemd_is_noted(tmp_path):
     root = make_host(tmp_path, "debian", systemd=False, files={"proc/1/comm": "bash\n"})
     result = profile(root, binaries=["apt-get"])

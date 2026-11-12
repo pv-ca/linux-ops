@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Run detect_host.py inside each tier 1 distribution's container image and
-# check the family and package manager it reports.
+# Run the scripts inside each tier 1 distribution's container image: a snapshot,
+# the journal hook and a record, and the family and package manager detect_host.py reports.
 #
 # Usage: tests/containers.sh [image-substring]
 # ENGINE selects the container engine (default: docker, else podman).
@@ -37,6 +37,13 @@ for entry in "${cases[@]}"; do
      python3 -c 'import glob, json, sys
 s = json.load(open(glob.glob(\"/tmp/s/snapshots/*.json\")[0]))
 sys.exit(0 if len(s[\"packages\"]) > 20 and s[\"etc\"] else \"FAIL: empty snapshot\")' &&
+     # The hook and record must work on this distribution's Python, the oldest included.
+     echo '{\"tool_name\": \"Bash\", \"cwd\": \"/\", \"tool_input\": {\"command\": \"touch /etc/lo-test\"}}' |
+       LINUX_OPS_STATE=/tmp/s python3 journal.py hook >/dev/null &&
+     grep -q 'touch /etc/lo-test' /tmp/s/journal.jsonl &&
+     LINUX_OPS_STATE=/tmp/s python3 journal.py record --what 'created /etc/lo-test' \
+       --undo 'rm /etc/lo-test' >/dev/null &&
+     LINUX_OPS_STATE=/tmp/s python3 journal.py list | grep -q 'created /etc/lo-test' &&
      python3 detect_host.py --compact")"; then
     echo "FAIL: could not run the scripts"
     failed=1

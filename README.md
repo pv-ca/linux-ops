@@ -9,14 +9,14 @@
 ### Your agent for Linux system administration.
 
 [![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-d97757?style=flat-square)](#install)
-[![Codex](https://img.shields.io/badge/Codex-plugin-10a37f?style=flat-square)](#install)
-[![Antigravity](https://img.shields.io/badge/Antigravity-plugin-4285f4?style=flat-square)](#install)
+[![Codex](https://img.shields.io/badge/Codex-planned-8a8a8a?style=flat-square)](#install)
+[![Antigravity](https://img.shields.io/badge/Antigravity-planned-8a8a8a?style=flat-square)](#install)
 [![MIT](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](LICENSE)
 [![Status](https://img.shields.io/badge/status-early-8a8a8a?style=flat-square)](#install)
 
 **English** · [Português (Brasil)](docs/readme/README_pt-BR.md)
 
-[Install](#install) · [What it does](#what-it-does) · [Your data](#your-data) · [Supported systems](#supported-systems) · [Development](#development)
+[Example](#the-same-question-with-and-without-it) · [How well it works](#how-well-it-works) · [Install](#install) · [What it does](#what-it-does) · [When not to use it](#when-not-to-use-it) · [Your data](#your-data) · [Supported systems](#supported-systems)
 
 </div>
 
@@ -24,11 +24,57 @@
 
 **linux-ops** lets your agent administer the Linux machine it runs on: the agent records each change with the command that undoes it, a hook logs the commands it ran in case it forgets, and it can tell you what changed since things last worked.
 
-> Early version, 0.3.0. Measured so far on two scripted cases with Claude Code (undoing a day-old change, and saying what changed); other agents and distributions are not benchmarked yet.
+> Early version, 0.3.1. **Claude Code: supported and tested. Codex and Antigravity: planned, not yet tested.** Measured on two scripted cases on Fedora; see [How well it works](#how-well-it-works).
 
 Models already know `apt` and `systemctl`. What they do not have is memory of this machine: what an earlier session changed, how to reverse it, and what the system looked like before. That is what linux-ops keeps.
 
+## The same question, with and without it
+
+Four things were changed on a Fedora machine without telling the agent: a package installed, a sysctl file added, a configuration file edited with its date set back 30 days, and another configuration file deleted. A new session was asked what changed in the last hour, one change per line.
+
+<table>
+<tr><th>Without linux-ops</th><th>With linux-ops</th></tr>
+<tr><td>
+
+```text
+installed package: tree (tree-2.2.1-4.fc44.x86_64)
+added config file: /etc/sysctl.d/99-tuning.conf
+edited config file: /etc/myapp/app.conf
+```
+
+</td><td>
+
+```text
+installed package: tree (2.2.1-4.fc44)
+added config file: /etc/sysctl.d/99-tuning.conf
+edited config file: /etc/myapp/app.conf
+deleted config file: /etc/myapp/legacy.conf
+```
+
+</td></tr>
+</table>
+
+Real answers from two rounds of the [what-changed case](docs/EVALS.md#what-changed), Claude Code with `claude-opus-5-5`. A deleted file that no package owns leaves nothing behind to find; only a snapshot taken before it still lists the file.
+
+## How well it works
+
+The same prompts, with and without the plugin, in a fresh Fedora 44 container, three rounds each. Claude Code with `claude-opus-5-5` at high effort, 2026-11-11. [docs/EVALS.md](docs/EVALS.md) describes the cases and what counts as a pass.
+
+| Case | With linux-ops | Without |
+| --- | --- | --- |
+| **undo-yesterday**: a new session undoes what an agent did the day before, and keeps what the person did after | 3 of 3 · 29 turns · $0.84 | 0 of 4 · 23 turns · $0.75 |
+| **what-changed**: name four unannounced changes, one of them a deleted file | 3 of 3 · 9 turns · $0.27 | 0 of 3 · 21 turns · $0.82 |
+
+Turns and cost are medians per round. Three rounds show a pattern, not a rate.
+
 ## Install
+
+| Agent | What you get | Status |
+| --- | --- | --- |
+| Claude Code | skill, hooks, commands and panel | supported, measured |
+| Codex | skill and hooks | preview: installs, no measured session yet |
+| Antigravity | skill and hooks | preview: installs, no measured session yet |
+| Any other agent | skill only, no hooks: the agent writes the journal itself | not measured |
 
 **Claude Code**
 
@@ -60,13 +106,13 @@ For one project only, clone the repository into `.agents/plugins/linux-ops` in t
 npx skills add pv-ca/linux-ops
 ```
 
-Add `-g` to install it for every project. This route installs the skill without the hooks, so the agent writes the journal itself.
+Add `-g` to install it for every project.
 
 With the plugin installed, every shell command the agent runs is logged on your machine, in every project it is enabled for. [Your data](#your-data) says what is kept, where, and how to turn it off or remove it.
 
-Then ask "what changed on this machine in the last two weeks?", or run `/linux-ops:setup` in Claude Code. The answer comes from the package manager's own record, so it works on the first day.
+**Check that it works.** Start a new session and ask "what changed on this machine in the last two weeks?", or run `/linux-ops:setup` in Claude Code. The answer comes from the package manager's own record, so it works on the first day, before any snapshot exists.
 
-The same folder serves the three agents: the skill and its scripts are shared, and each agent has its own thin manifest and hook file. The install commands were tested for the three; a live session has run in Claude Code and Antigravity, not yet in Codex.
+The same folder serves the three agents: the skill and its scripts are shared, and each agent has its own thin manifest and hook file.
 
 ## What it does
 
@@ -75,17 +121,8 @@ The same folder serves the three agents: the skill and its scripts are shared, a
 | Journal | Each change is recorded with what it was, the command that undoes it and the backup it took. With the plugin, a hook also logs every command the agent runs, and the next session is told when commands were logged with no change recorded, so the record does not depend on the model remembering. |
 | Snapshots | System packages, Flatpak and Snap, kernel and its command line, loaded modules, Secure Boot state, enabled units (system and user), user and group names, a hash of each file in `/etc` and in `~/.config`, and dconf. Taken at most once a day at session start. Comparing two of them answers "what changed?" from what is on disk, including changes nobody announced. |
 | Undo plan | One command gives the agent the active changes with their undo commands, the snapshot from before them and what still differs from it, so undoing costs few steps. The scripts never run an undo themselves. |
-| History | What the package manager itself recorded, so "what changed last week?" has an answer on the day you install linux-ops, before any snapshot exists. |
-| Host profile | Distribution family, package manager, session type, SELinux or AppArmor, and whether the system is one the skill may change. Shown to the agent at session start. |
-
-In Claude Code a panel says what was changed on this machine, latest change first, each with an **Undo** button that only fills the prompt for you to send. You choose where it lives with `/linux-ops-panel chip|bar|side|off`, and the choice is kept for later sessions:
-
-- `chip` (default): one quiet label under the prompt, "linux-ops · 2 changes"; a click opens a two-line card above the prompt with the machine, the latest change and its Undo.
-- `bar`: one line above the prompt with the latest change and its Undo.
-- `side`: a panel beside the chat with the machine (distribution, kernel, desktop, package manager, init, SELinux or AppArmor), every change under its day, the age of the last snapshot and a button to take one now.
-- `off`: nothing but a status entry while there are changes.
-
-It reads the journal directly and spends no model tokens.
+| History | What the package manager itself recorded, so "what changed last week?" has an answer on the day you install linux-ops. |
+| Host profile | Distribution family, package manager, init, session type, SELinux or AppArmor, and whether the system is one the skill may change. Shown to the agent at session start. |
 
 Commands, in Claude Code:
 
@@ -101,9 +138,23 @@ Commands, in Claude Code:
 
 In the other agents, ask for the same thing in words; the skill routes to the same scripts.
 
+In Claude Code a panel says what was changed on this machine, latest change first, each with an **Undo** button that only fills the prompt for you to send. It reads the journal directly and spends no model tokens. Choose where it lives with `/linux-ops-panel chip|bar|side|off`; the choice is kept for later sessions:
+
+- `chip` (default): one quiet label under the prompt, "linux-ops · 2 changes"; a click opens a two-line card above the prompt with the machine, the latest change and its Undo.
+- `bar`: one line above the prompt with the latest change and its Undo.
+- `side`: a panel beside the chat with the machine (distribution, kernel, desktop, package manager, init, SELinux or AppArmor), every change under its day, the age of the last snapshot and a button to take one now.
+- `off`: nothing but a status entry while there are changes.
+
 The scripts are in `skills/linux-ops/scripts/` and need Python 3.6+ with the standard library only. `detect_host.py` and `state.py` read the system; `journal.py` and `state.py` write only under `~/.local/state/linux-ops/`.
 
+## When not to use it
+
 linux-ops compares states and keeps undo commands. It does not restore the system the way a filesystem snapshot does, and a snapshot of either kind is not a backup. An undo command is written by the agent and nothing checks it: read it before it runs.
+
+- **You want to roll the whole system back to yesterday.** Use filesystem snapshots, such as Snapper or Timeshift on Btrfs. linux-ops works alongside them: it tells you what changed and how to undo that one thing, without losing everything else since.
+- **You manage many machines.** Use a configuration tool such as Ansible, or a declarative system such as NixOS. linux-ops is for the one machine the agent runs on.
+- **You want every version of `/etc` kept.** etckeeper puts `/etc` under version control, and the two do not get in each other's way.
+- **You do not want commands logged.** Set `LINUX_OPS_NO_LOG=1`, or install the skill alone, without the hooks.
 
 ## Your data
 
@@ -111,13 +162,13 @@ linux-ops compares states and keeps undo commands. It does not restore the syste
 | --- | --- |
 | What is logged | Every shell command the agent runs, and each file it edits outside a Git repository, in every project the plugin is enabled for. Not the output of commands. |
 | What else is kept | The changes the agent records, and up to 90 snapshots (about 1 MB each, one a day at most). |
-| Where | `~/.local/state/linux-ops/<machine-id>/`, readable only by you. `journal.py where` prints the directory and its size. |
+| Where | `~/.local/state/linux-ops/<machine-id>/` (with `-<container>` added inside a distrobox or other container), readable only by you. `journal.py where` prints the directory and its size. |
 | For how long | The journal is never trimmed. Snapshots beyond the newest 90 are deleted. |
 | Who sees it | The scripts send nothing anywhere. What your agent reads from the journal goes to your model provider, like any other tool output. |
 | Turn the log off | `LINUX_OPS_NO_LOG=1` stops the automatic command log and keeps only the changes the agent records. |
 | Remove everything | Uninstall the plugin with your agent's own command, then delete `~/.local/state/linux-ops/`. |
 
-Credentials are masked before a command is written: values assigned to or passed with `password`, `token`, `secret`, `api key` or `authorization`, passwords and tokens inside URLs, private keys, and the password arguments of common tools (`curl -u`, `sshpass`, `mysql`, `nmcli`, `chpasswd`, `docker login`, `sudo -S` and a few more). The mask is a courtesy, not a guarantee: a secret in a form it does not know is stored as typed.
+Credentials are masked before a command is written: values assigned to or passed with `password`, `token`, `secret`, `api key` or `authorization`, passwords and tokens inside URLs, private keys, and the password arguments of common tools (`curl -u`, `sshpass`, `mysql`, `nmcli`, `chpasswd`, `docker login`, `sudo -S` and a few more). dconf keys whose names look like credentials are stored as a hash. The mask is a courtesy, not a guarantee: a secret in a form it does not know is stored as typed.
 
 ## Supported systems
 
@@ -127,7 +178,7 @@ Credentials are masked before a command is written: values assigned to or passed
 | Derivative, untested | Distributions that declare one of those families in `ID_LIKE`, such as Rocky, Linux Mint or Manjaro |
 | Everything else | Alpine, Void, Gentoo, NixOS and any other distribution. Detection and snapshots are tested in CI on Alpine; nothing else here is tested. The profile carries a note, and the agent confirms names on the host. |
 
-It is built to work on any distribution, and nothing in it refuses one. Where the usual commands would be wrong, the profile tells the agent how that system is changed: image-based systems (Fedora Silverblue, Kinoite, Bazzite, openSUSE MicroOS and Aeon) through their own layering tool, NixOS through its configuration, hosts without systemd through their own init. The package history reads rpm, dpkg and pacman only. [docs/CONTRACT.md](docs/CONTRACT.md) states the rules.
+It is built to work on any distribution, and nothing in it refuses one. Where the usual commands would be wrong, the profile tells the agent how that system is changed: image-based systems (Fedora Silverblue, Kinoite, Bazzite, openSUSE MicroOS and Aeon) through their own layering tool, NixOS through its configuration, hosts without systemd through their own init, and containers with no service manager by starting and stopping the process directly. The package history reads rpm, dpkg and pacman only. [docs/CONTRACT.md](docs/CONTRACT.md) states the rules.
 
 ## Development
 

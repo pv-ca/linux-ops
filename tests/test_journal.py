@@ -59,6 +59,49 @@ def test_state_dir_survives_a_machine_id_that_appears_or_goes(tmp_path):
     assert journal.state_dir(env, str(tmp_path)) == str(home / "zzz999")
 
 
+def test_hook_files_match_every_tool_the_journal_reads():
+    # A tool the parser knows but no matcher names is never recorded (Codex's apply_patch was).
+    root = os.path.join(os.path.dirname(__file__), "..")
+    # Each file is checked on its own: a tool named only in the other runtime's file never fires.
+    expected = {"hooks/hooks.json": {"Bash", "Write", "Edit", "apply_patch"},  # Claude Code, Codex
+                "hooks.json": {"run_command", "write_to_file", "replace_file_content",
+                               "multi_replace_file_content"}}  # Antigravity
+    assert set.union(*expected.values()) == set(
+        journal.SHELL_TOOLS + journal.FILE_TOOLS + ("apply_patch",))
+    for name, tools in expected.items():
+        named = set()
+        with open(os.path.join(root, name)) as handle:
+            # Claude Code and Codex nest under "hooks"; Antigravity under one key per hook set.
+            for group in json.load(handle).values():
+                for entry in (group.get("PostToolUse", []) if isinstance(group, dict) else []):
+                    named.update(entry["matcher"].split("|"))
+        assert tools <= named, (name, tools - named)
+
+
+def test_state_dir_keeps_a_container_apart_from_its_host(tmp_path):
+    # distrobox and toolbox share the host's /etc/machine-id and home.
+    env = {"XDG_STATE_HOME": str(tmp_path / "s")}
+    home = tmp_path / "s" / "linux-ops"
+    (tmp_path / "etc").mkdir()
+    (tmp_path / "etc" / "machine-id").write_text("abc123\n")
+    assert journal.state_dir(env, str(tmp_path)) == str(home / "abc123")
+    (home / "abc123").mkdir(parents=True)
+    (tmp_path / "run").mkdir()
+    (tmp_path / "run" / ".containerenv").write_text('engine="podman"\nname="dev-box"\n')
+    assert journal.state_dir(env, str(tmp_path)) == str(home / "abc123-dev%2Dbox")
+    # An empty id in a container does not adopt the host's journal either...
+    (tmp_path / "etc" / "machine-id").write_text("")
+    assert journal.state_dir(env, str(tmp_path)) == str(home / "unknown-dev%2Dbox")
+    # ...and its own journal follows it when the id appears, leaving other containers alone:
+    # "dev_box" is a different container, and so is one whose name ends the same.
+    for name in ("unknown-dev%2Dbox", "unknown-dev_box", "unknown-my%2Ddev%2Dbox"):
+        (home / name).mkdir()
+    (tmp_path / "etc" / "machine-id").write_text("def456\n")
+    assert journal.state_dir(env, str(tmp_path)) == str(home / "def456-dev%2Dbox")
+    assert not (home / "unknown-dev%2Dbox").exists()
+    assert (home / "unknown-dev_box").exists() and (home / "unknown-my%2Ddev%2Dbox").exists()
+
+
 def test_hook_records_commands_and_outside_edits(state, monkeypatch):
     bash = {"tool_name": "Bash", "session_id": "s", "cwd": "/home/u/p",
             "tool_input": {"command": "sudo dnf install nginx"}}
@@ -112,6 +155,17 @@ def test_torn_line_does_not_hide_entries(state):
         handle.write('{"kind": "chan\n')
     journal.append(state, {"kind": "change", "what": "c", "undo": "d"})
     assert [c["what"] for c in journal.changes(journal.read_entries(state))] == ["a", "c"]
+
+
+def test_a_torn_last_line_does_not_swallow_the_next_entry(state):
+    # A write cut off before its newline (a killed hook, a full disk) ends the file mid-line.
+    os.makedirs(state)
+    with open(os.path.join(state, "journal.jsonl"), "w") as handle:
+        handle.write('{"kind": "command", "command": "ls"')
+    first = journal.append(state, {"kind": "change", "what": "a", "undo": "b"})
+    second = journal.append(state, {"kind": "change", "what": "c", "undo": "d"})
+    assert [c["what"] for c in journal.changes(journal.read_entries(state))] == ["a", "c"]
+    assert first["id"] != second["id"]
 
 
 def test_context_names_host_and_latest_changes(state):
@@ -265,6 +319,32 @@ def test_codex_apply_patch_records_files_outside_the_project():
     events = journal.events_from_hook({"tool_name": "apply_patch", "cwd": "/home/u/p",
                                        "session_id": "s", "tool_input": {"command": patch}})
     assert [e["path"] for e in events] == ["/etc/x.conf"]
+
+
+def test_root_under_sudo_hands_the_journal_back_inside_home_only(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    (home / "s").mkdir(parents=True)
+    owned = []
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("SUDO_UID", str(os.stat(str(home)).st_uid))
+    monkeypatch.setenv("SUDO_GID", "7")
+    monkeypatch.setattr(os, "geteuid", lambda: 0)
+    monkeypatch.setattr(os, "chown", lambda path, uid, gid, **kw: owned.append((path, gid)))
+    journal.give_back(str(home / "s"), str(tmp_path / "outside"), "/")
+    assert owned == [(str(home / "s"), 7)]
+    # sudo that reset HOME to root's: nothing is given away.
+    owned.clear()
+    monkeypatch.setenv("SUDO_UID", str(os.stat(str(home)).st_uid + 1))
+    journal.give_back(str(home / "s"))
+    assert owned == []
+
+
+def test_context_warns_when_the_journal_is_not_writable(state):
+    journal.append(state, {"kind": "change", "what": "a", "undo": "b"})
+    os.chmod(os.path.join(state, "journal.jsonl"), 0o400)
+    if os.access(os.path.join(state, "journal.jsonl"), os.W_OK):
+        pytest.skip("running as root: every file is writable")
+    assert "not writable" in journal.context(state, {})
 
 
 def test_antigravity_payloads():

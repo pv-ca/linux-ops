@@ -147,10 +147,18 @@ def detect_change_model(root, which):
     return "imperative"
 
 
+SERVICE_MANAGERS = ("init", "openrc-init", "runit", "runit-init", "s6-svscan", "dinit")
+
+
 def detect_init(root):
     if _exists(root, "/run/systemd/system"):
         return "systemd"
     name = _read(root, "/proc/1/comm")
+    # A container's first process is often sleep, a shell or a tiny reaper: nothing there
+    # manages services, and calling it "the init" sends the agent to commands that do not exist.
+    in_container = _exists(root, "/run/.containerenv") or _exists(root, "/.dockerenv")
+    if in_container and name not in SERVICE_MANAGERS:
+        return "none"
     return name or None
 
 
@@ -262,7 +270,10 @@ def build_profile(root="/", env=None, which=None, uid=None):
     elif change_model == "declarative":
         notes.append("NixOS: system state comes from its configuration; change that and "
                      "rebuild, because edits made by hand are overwritten")
-    if init != "systemd":
+    if init == "none":
+        notes.append("container with no service manager: systemctl and journalctl are absent; "
+                     "start a daemon directly and stop it by its process")
+    elif init != "systemd":
         notes.append("init is %s, not systemd: systemctl and journalctl are absent, use "
                      "this init's own service commands" % (init or "undetermined"))
 

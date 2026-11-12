@@ -30,10 +30,10 @@ Pick the numbers that match what bothers them, and write each down with the comm
 
 | Complaint | Measure |
 | --- | --- |
-| Slow to start | `systemd-analyze` and `systemd-analyze blame`; time to a usable desktop if they will time it |
+| Slow to start | `systemd-analyze` and `systemd-analyze critical-chain`, which shows what the boot waited for; `blame` only lists candidates, since a unit can look slow while it waits for another. Time to a usable desktop if they will time it |
 | Slow in use | memory and swap in use, pressure in `/proc/pressure/`, what the top processes are |
 | Disk full | free space per filesystem, and what the largest reclaimable items are |
-| Battery | drain in watts on battery from `/sys/class/power_supply/`, idle, screen on |
+| Battery | drain on battery, idle, screen on: `power_now` in `/sys/class/power_supply/<battery>/` where the driver has it, else `current_now` × `voltage_now` (microamps and microvolts) |
 | Hot or loud | temperatures and fan speed at idle and under the load they named |
 | Games | frames per second and frame times in the game they named, with the overlay they already have |
 
@@ -72,13 +72,13 @@ If they still want one after hearing the cost, it is their machine: apply it as 
 
 ## Areas
 
-**More software to choose from.** Adding a source is the usual wish: Flatpak with Flathub, the distribution's community repositories, Nix or Homebrew in the home directory, or another distribution in a container with distrobox when they want that distribution's package manager. Check what is already configured, prefer the source the distribution documents, and say which sources mix badly on this family. Replacing the system package manager is not a tweak: it means another distribution. Say so, and offer the container.
+**More software to choose from.** Adding a source is the usual wish: Flatpak with Flathub, the distribution's community repositories, Nix or Homebrew in the home directory, or another distribution in a container with distrobox when they want that distribution's package manager. Check what is already configured, prefer the source the distribution documents, and say which sources mix badly on this family (on Arch, for one, an AUR package must be rebuilt by hand when a library it uses is updated in the official repositories). Replacing the system package manager is not a tweak: it means another distribution. Say so, and offer the container.
 
-**Disk space.** Report what can be reclaimed before removing anything: package caches, old kernels the distribution's own tool would remove, the journal beyond its limit, unused Flatpak runtimes, container images, the trash. Removing files does not undo; say that for each item and get a yes per group.
+**Disk space.** Report what can be reclaimed before removing anything, with its measured size: package caches (often already empty: dnf keeps none by default), old kernels the distribution's own tool would remove, older journal entries vacuumed to a size they choose (journald's limit stops growth but does not shrink what is there), unused Flatpak runtimes (`flatpak uninstall --unused` lists them before asking), container images (`podman system df` or `docker system df`; its reclaimable figure can be higher than what a prune frees), the trash. Removing files does not undo; say that for each item and get a yes per group.
 
 **Battery.** Laptops only. One power daemon, the one the distribution ships; charge limits when the hardware exposes them; what keeps the machine awake in suspend. Measure idle drain before and after.
 
-**Speed and responsiveness.** Usually a fault or a shortage, not a missing tweak: a failed service delaying boot, memory pressure, a disk that is nearly full, the wrong GPU driver. Fix those first. Compressed swap and an out-of-memory daemon help machines that freeze under load; measure pressure before recommending them.
+**Speed and responsiveness.** Usually a fault or a shortage, not a missing tweak: a failed service delaying boot, memory pressure, a disk that is nearly full, the wrong GPU driver. Fix those first. Compressed swap and an out-of-memory daemon help machines that become unresponsive under memory pressure; measure pressure before recommending them, and state their costs: the daemon ends whole groups of programs, losing unsaved work, and swap on zram cannot be hibernated to (zswap must be off for zram to work well).
 
 **Games.** The GPU driver the distribution packages, 32-bit libraries where the platform needs them, the compatibility layer the store ships, and the settings its documentation asks for. A proprietary driver with Secure Boot on needs the person at the keyboard (`install-and-handover.md`).
 
