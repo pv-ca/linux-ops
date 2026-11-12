@@ -12,7 +12,7 @@
 [![Codex](https://img.shields.io/badge/Codex-plugin-10a37f?style=flat-square)](#instalação)
 [![Antigravity](https://img.shields.io/badge/Antigravity-plugin-4285f4?style=flat-square)](#instalação)
 [![MIT](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](../../LICENSE)
-[![Status](https://img.shields.io/badge/status-rascunho-8a8a8a?style=flat-square)](#instalação)
+[![Status](https://img.shields.io/badge/status-inicial-8a8a8a?style=flat-square)](#instalação)
 
 [English](../../README.md) · **Português (Brasil)**
 
@@ -24,7 +24,7 @@
 
 **linux-ops** deixa seu agente administrar a máquina Linux em que ele roda: o agente registra cada alteração com o comando que a desfaz, um hook grava os comandos que ele rodou caso ele esqueça, e ele sabe dizer o que mudou desde que tudo funcionava.
 
-> Rascunho inicial, versão 0.3.0. Ainda sem benchmark contra um agente sem ela.
+> Versão inicial, 0.3.0. Medida até agora em dois casos roteirizados com o Claude Code (desfazer uma alteração do dia anterior e dizer o que mudou); outros agentes e distribuições ainda não foram medidos.
 
 Os modelos já conhecem `apt` e `systemctl`. O que eles não têm é memória desta máquina: o que uma sessão anterior alterou, como reverter e como o sistema estava antes. É isso que a linux-ops guarda.
 

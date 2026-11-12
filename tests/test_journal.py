@@ -174,6 +174,13 @@ def test_edits_are_logged_unless_inside_a_git_work_tree(tmp_path, monkeypatch):
     dotfile = str(tmp_path / ".bashrc")
     assert paths(dotfile, str(tmp_path)) == [dotfile]
     assert paths("/etc/hosts", "/") == ["/etc/hosts"]
+    # Dotfiles kept in a repository at ~ are still the machine; a project inside ~ is not.
+    home = tmp_path / "home"
+    (home / ".git").mkdir(parents=True)
+    (home / "project" / ".git").mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+    assert paths(str(home / ".bashrc"), str(home)) == [str(home / ".bashrc")]
+    assert paths(str(home / "project" / "a.py"), str(home)) == []
 
 
 def test_parallel_appends_get_distinct_ids(state):

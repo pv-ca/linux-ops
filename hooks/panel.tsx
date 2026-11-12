@@ -113,7 +113,11 @@ async function profile($: EngineInterface): Promise<void> {
     run(['python3', `${$.plugin.root}/${DETECT}`, '--compact']),
     run(['uname', '-r']),
     run(['uname', '-m']),
-    run(['df', '-P', '/', '/home']),
+    // df exits 1 when /home is not there, and still prints the line for /.
+    $.process.run(['df', '-P', '/', '/home'], { timeoutMs: 10000 }).then(
+      ran => ran.stdout,
+      () => '',
+    ),
     // Without systemd the command is missing and the line simply does not show.
     run(['systemctl', '--failed', '--no-legend', '--plain']),
   ])

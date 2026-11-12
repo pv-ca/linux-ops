@@ -169,9 +169,12 @@ def _in_repository(path):
 
     The session's directory says nothing: an agent started in ~ or / edits ~/.bashrc and /etc.
     """
-    folder = os.path.dirname(path)
+    # etckeeper puts a repository in /etc and people keep dotfiles in one at ~: those
+    # trees are the machine itself, so a repository rooted there does not count.
+    machine = ("/", "/etc", os.path.realpath(os.path.expanduser("~")))
+    folder = os.path.dirname(os.path.realpath(path))
     while True:
-        if os.path.exists(os.path.join(folder, ".git")):
+        if folder not in machine and os.path.exists(os.path.join(folder, ".git")):
             return True
         parent = os.path.dirname(folder)
         if parent == folder:

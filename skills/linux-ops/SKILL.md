@@ -61,7 +61,9 @@ Do not chase what has no way back. List it for the person as "left behind", with
 
 - a dependency upgraded to a version whose predecessor no enabled repository offers;
 - the account files' automatic backups (`/etc/passwd-`, `/etc/shadow-`, `/etc/group-`, `/etc/gshadow-`);
-- `/etc/machine-id`, and empty runtime directories under `/run` and `/var`.
+- empty runtime directories under `/run` and `/var`.
+
+A leftover that one safe local command puts back is not "left behind": run it. `/etc/machine-id` that was empty or absent before, and was filled by a package the undo removed, goes back to what it was; one that held an ID before is never touched.
 
 Never fetch a package from outside the machine's enabled repositories to restore a version: that trades a small leftover for software nobody chose to trust.
 

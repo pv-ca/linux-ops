@@ -39,6 +39,8 @@ Pick the numbers that match what bothers them, and write each down with the comm
 
 When nothing measurable matches the complaint, say so now: the result will be their judgement, not a number.
 
+Save what they answered and the numbers to `improve-YYYY-MM-DD.md` in the linux-ops state directory (`state.py status` prints it as `directory`), so a later session can measure again against them. Read the newest such file first, and do not ask again what it already answers.
+
 ## 4. Recommend
 
 A list of at most seven, best first. For each: what it changes, what it should improve and by roughly how much, what it costs (battery for speed, noise for temperature), whether it undoes cleanly, and whether it needs a reboot. Leave out anything that does not apply to this hardware and distribution, and anything already in place.

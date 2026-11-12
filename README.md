@@ -12,7 +12,7 @@
 [![Codex](https://img.shields.io/badge/Codex-plugin-10a37f?style=flat-square)](#install)
 [![Antigravity](https://img.shields.io/badge/Antigravity-plugin-4285f4?style=flat-square)](#install)
 [![MIT](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](LICENSE)
-[![Status](https://img.shields.io/badge/status-draft-8a8a8a?style=flat-square)](#install)
+[![Status](https://img.shields.io/badge/status-early-8a8a8a?style=flat-square)](#install)
 
 **English** · [Português (Brasil)](docs/readme/README_pt-BR.md)
 
@@ -24,7 +24,7 @@
 
 **linux-ops** lets your agent administer the Linux machine it runs on: the agent records each change with the command that undoes it, a hook logs the commands it ran in case it forgets, and it can tell you what changed since things last worked.
 
-> Early draft, version 0.3.0. Not yet benchmarked against an agent without it.
+> Early version, 0.3.0. Measured so far on two scripted cases with Claude Code (undoing a day-old change, and saying what changed); other agents and distributions are not benchmarked yet.
 
 Models already know `apt` and `systemctl`. What they do not have is memory of this machine: what an earlier session changed, how to reverse it, and what the system looked like before. That is what linux-ops keeps.
 
