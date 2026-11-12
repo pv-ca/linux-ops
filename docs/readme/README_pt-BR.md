@@ -31,8 +31,6 @@ A **linux-ops** guarda cada alteração que o agente faz junto com o comando que
 
 No Codex, no Antigravity e em outros agentes, peça a mesma coisa com palavras.
 
-> Versão inicial, 0.3.1. **Claude Code: suportado e testado. Codex e Antigravity: planejados, ainda não testados.** Medida em dois casos roteirizados no Fedora; veja [Quão bem funciona](#quão-bem-funciona).
-
 Os modelos já conhecem `apt` e `systemctl`. O que eles não têm é memória desta máquina: o que uma sessão anterior alterou, como reverter e como o sistema estava antes. É isso que a linux-ops guarda.
 
 ## A mesma pergunta, com e sem ela

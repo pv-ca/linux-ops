@@ -31,8 +31,6 @@ Your agent installs a package, enables a service and edits a file in `/etc`. The
 
 In Codex, Antigravity and other agents, ask for the same thing in words.
 
-> Early version, 0.3.1. **Claude Code: supported and tested. Codex and Antigravity: planned, not yet tested.** Measured on two scripted cases on Fedora; see [How well it works](#how-well-it-works).
-
 Models already know `apt` and `systemctl`. What they do not have is memory of this machine: what an earlier session changed, how to reverse it, and what the system looked like before. That is what linux-ops keeps.
 
 ## The same question, with and without it
